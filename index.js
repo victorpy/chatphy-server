@@ -54,13 +54,12 @@ app.get("/contact/search/:email", (req, res) => {
 app.post("/message", (req, res) => {
 
     console.log(req.body);
-    const token = null; 
-    
+    const content = req.body.content;
 
     /**add message in DB */
     var ref = db.ref("chats").child(req.body.chat_id).push(
       {
-          content: req.body.content,
+          content: content,
           destination_uid: req.body.destination_uid,
           origin_uid: req.body.origin_uid,
           timestamp: Date.now()
@@ -69,20 +68,15 @@ app.post("/message", (req, res) => {
 
     /**get user profile data for push notifications id */
     var profile =  db.ref(`profile`).child(req.body.destination_uid).once("value", snapshot => {
-        snapshot.forEach((snap) => {
-            const token = snap.val();
+        console.log(snapshot.val());
+            const token = snapshot.val().push_token;
 
             var message = {
                 notification: {
-                    title: "Title",
-                    body: "Body"
-                  },
-                token: token
+                    title: "Message",
+                    body: content
+                  }
               };
-
-            message.token = token;
-
-            console.log("Token "+message.token)
 
             /**send push */
             messaging.sendToDevice(token, message)
@@ -92,7 +86,6 @@ app.post("/message", (req, res) => {
             .catch((error) => {
                 console.log(error);
             });
-        });
     });    
 
     res.status(200).send({ message: "message created" });
